@@ -1,0 +1,525 @@
+[gd_scene load_steps=25 format=2]
+
+[ext_resource path="res://art/dsfhrtjgf.png" type="Texture" id=1]
+[ext_resource path="res://art/dsfhrtjgf_depth.png" type="Texture" id=2]
+[ext_resource path="res://MyCamera.gd" type="Script" id=3]
+[ext_resource path="res://Player.gd" type="Script" id=4]
+[ext_resource path="res://art/0-ufeff_tiles_spritesheet.png" type="Texture" id=5]
+[ext_resource path="res://Glory-Medium.ttf" type="DynamicFontData" id=6]
+
+[sub_resource type="ViewportTexture" id=35]
+viewport_path = NodePath("ReflViewport")
+
+[sub_resource type="Shader" id=11]
+code = "// NOTE: Shader automatically converted from Godot Engine 3.5.stable's SpatialMaterial.
+
+shader_type spatial;
+render_mode async_visible,blend_mix,depth_draw_opaque,cull_disabled,diffuse_lambert,specular_disabled;
+uniform vec4 albedo : hint_color;
+uniform sampler2D texture_albedo : hint_albedo;
+uniform float specular;
+uniform float metallic;
+uniform float roughness : hint_range(0,1);
+uniform float point_size : hint_range(0,128);
+uniform sampler2D texture_depth : hint_black;
+uniform float depth_scale;
+uniform int depth_min_layers;
+uniform int depth_max_layers;
+uniform vec2 depth_flip;
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+
+void vertex() {
+    UV=UV*uv1_scale.xy+uv1_offset.xy;
+}
+
+
+
+
+void fragment() {
+    vec2 base_uv = UV;
+
+    vec3 view_dir = normalize(normalize(-VERTEX)*mat3(TANGENT,-BINORMAL,NORMAL));
+    float num_layers = 16.0;
+    vec2 P = view_dir.xy * depth_scale;
+    vec2 delta = P / num_layers;
+    vec2 ofs = base_uv;
+
+    vec4 albedo_tex = texture(texture_albedo,base_uv);
+    
+    int iters = int(num_layers);
+    while(albedo_tex.a < 0.5 && iters > 0)
+    {
+        base_uv += delta;
+        albedo_tex = texture(texture_albedo,base_uv);
+        iters -= 1;
+    }
+    
+    if(iters != int(num_layers))
+        NORMAL = -NORMAL;
+    
+    ALBEDO = albedo.rgb * albedo_tex.rgb;
+    METALLIC = metallic;
+    ROUGHNESS = roughness;
+    SPECULAR = specular;
+    ALPHA = albedo.a * albedo_tex.a;
+    ALPHA_SCISSOR = 0.5;
+}
+"
+
+[sub_resource type="ShaderMaterial" id=12]
+shader = SubResource( 11 )
+shader_param/albedo = Color( 1, 1, 1, 1 )
+shader_param/specular = 0.5
+shader_param/metallic = 0.0
+shader_param/roughness = 1.0
+shader_param/point_size = 1.0
+shader_param/depth_scale = -0.1
+shader_param/depth_min_layers = 8
+shader_param/depth_max_layers = 8
+shader_param/depth_flip = Vector2( 1, 1 )
+shader_param/uv1_scale = Vector3( 1, 1, 1 )
+shader_param/uv1_offset = Vector3( 0, 0, 0 )
+shader_param/uv2_scale = Vector3( 1, 1, 1 )
+shader_param/uv2_offset = Vector3( 0, 0, 0 )
+shader_param/texture_albedo = ExtResource( 1 )
+shader_param/texture_depth = ExtResource( 2 )
+
+[sub_resource type="Animation" id=14]
+resource_name = "Attack"
+length = 0.4
+step = 0.05
+tracks/0/type = "transform"
+tracks/0/path = NodePath(".")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PoolRealArray( 0, 1, 0.198, -0.127, -0.316, -0.105517, -0.602103, 0.136612, 0.779536, 1, 1, 1, 0.05, 1, 0.198, -0.0776043, -0.363401, -0.258223, -0.562981, 0.253462, 0.743055, 1, 1, 1, 0.1, 1, 0.198, -0.11324, -0.439339, -0.474528, -0.457548, 0.414537, 0.627402, 1, 1, 1, 0.15, 1, 0.198, -0.170612, -0.441655, 0.669525, 0.276372, -0.552095, -0.412972, 1, 1, 1, 0.2, 1, 0.198, -0.195377, -0.372346, -0.560363, -0.392711, 0.476412, 0.552089, 1, 1, 1, 0.3, 1, 0.198, -0.127, -0.316, -0.105517, -0.602103, 0.136612, 0.779536, 1, 1, 1 )
+
+[sub_resource type="Animation" id=15]
+resource_name = "Idle"
+length = 0.001
+tracks/0/type = "transform"
+tracks/0/path = NodePath(".")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PoolRealArray( 0, 1, 0.198, -0.127, -0.316, -0.105517, -0.602103, 0.136612, 0.779536, 1, 1, 1 )
+
+[sub_resource type="CylinderShape" id=5]
+height = 1.8
+radius = 0.4
+
+[sub_resource type="SpatialMaterial" id=9]
+flags_transparent = true
+flags_unshaded = true
+params_blend_mode = 1
+albedo_color = Color( 0.0392157, 0.215686, 0.364706, 1 )
+uv1_triplanar = true
+
+[sub_resource type="CubeMesh" id=10]
+material = SubResource( 9 )
+size = Vector3( 1.05, 1.05, 1.05 )
+
+[sub_resource type="SpatialMaterial" id=18]
+flags_transparent = true
+flags_unshaded = true
+params_blend_mode = 2
+albedo_color = Color( 0.0392157, 0.215686, 0.364706, 1 )
+uv1_triplanar = true
+
+[sub_resource type="CubeMesh" id=19]
+material = SubResource( 18 )
+size = Vector3( 1.025, 1.025, 1.025 )
+
+[sub_resource type="SpatialMaterial" id=20]
+flags_transparent = true
+flags_unshaded = true
+params_blend_mode = 1
+albedo_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+uv1_triplanar = true
+
+[sub_resource type="CubeMesh" id=21]
+material = SubResource( 20 )
+size = Vector3( 1.005, 1.005, 1.005 )
+
+[sub_resource type="SpatialMaterial" id=22]
+flags_transparent = true
+flags_unshaded = true
+params_blend_mode = 2
+albedo_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+uv1_triplanar = true
+
+[sub_resource type="CubeMesh" id=23]
+material = SubResource( 22 )
+size = Vector3( 1.025, 1.025, 1.025 )
+
+[sub_resource type="StyleBoxFlat" id=38]
+bg_color = Color( 0.435294, 0.447059, 0.486275, 1 )
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 0.0862745, 0.0784314, 0.0784314, 1 )
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="AtlasTexture" id=36]
+flags = 9
+atlas = ExtResource( 5 )
+region = Rect2( 0, 64, 16, 16 )
+
+[sub_resource type="DynamicFont" id=37]
+size = 24
+font_data = ExtResource( 6 )
+
+[sub_resource type="StyleBoxFlat" id=39]
+draw_center = false
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color( 1, 1, 1, 1 )
+
+[node name="Player" type="KinematicBody" groups=["Player"]]
+collision_layer = 2
+script = ExtResource( 4 )
+
+[node name="ReflViewport" type="Viewport" parent="."]
+process_priority = 1
+size = Vector2( 1280, 720 )
+fxaa = true
+hdr = false
+keep_3d_linear = true
+usage = 3
+render_target_update_mode = 3
+gui_snap_controls_to_pixels = false
+shadow_atlas_size = 256
+
+[node name="Camera" type="Camera" parent="ReflViewport"]
+transform = Transform( 1, 0, 0, 0, 0.94104, -0.338295, 0, 0.338295, 0.94104, -7.1439, -1.58878, 0 )
+visible = false
+cull_mask = 1048541
+fov = 90.0
+
+[node name="TextureRect" type="TextureRect" parent="ReflViewport"]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+texture = SubResource( 35 )
+
+[node name="ReflectionProbe" type="ReflectionProbe" parent="."]
+visible = false
+layers = 2
+update_mode = 1
+extents = Vector3( 5, 5, 5 )
+cull_mask = 1048541
+
+[node name="OmniLight" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.274, 0 )
+light_energy = 0.5
+
+[node name="Camera" type="Camera" parent="."]
+process_priority = -1
+transform = Transform( -1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 1.62, 0 )
+current = true
+fov = 90.0
+size = 200.0
+script = ExtResource( 3 )
+
+[node name="RayCast" type="RayCast" parent="Camera"]
+visible = false
+enabled = true
+cast_to = Vector3( 0, 0, -4.5 )
+collision_mask = 33
+
+[node name="A" type="Spatial" parent="Camera"]
+transform = Transform( 0.997293, -0.0680819, 0.027778, 0.0665463, 0.99638, 0.0528937, -0.0312786, -0.050902, 0.998214, -0.013, -0.013, 0.023 )
+
+[node name="Weapon" type="Sprite3D" parent="Camera/A"]
+transform = Transform( 0.237619, -0.0859236, -0.967551, 0.340052, 0.940407, -3.72529e-07, 0.909891, -0.329017, 0.252677, 0.198, -0.127, -0.316 )
+layers = 2
+material_override = SubResource( 12 )
+pixel_size = 0.019
+texture = ExtResource( 1 )
+
+[node name="Animator" type="AnimationPlayer" parent="Camera/A/Weapon"]
+anims/Attack = SubResource( 14 )
+anims/Idle = SubResource( 15 )
+
+[node name="Camera" type="Camera" parent="Camera"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 200 )
+projection = 1
+fov = 40.1
+size = 300.0
+far = 800.0
+
+[node name="Hull" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0 )
+shape = SubResource( 5 )
+
+[node name="Box" type="MeshInstance" parent="."]
+visible = false
+layers = 2
+mesh = SubResource( 10 )
+
+[node name="Box2" type="MeshInstance" parent="Box"]
+layers = 2
+mesh = SubResource( 19 )
+skeleton = NodePath("../..")
+
+[node name="Box3" type="MeshInstance" parent="Box"]
+layers = 2
+mesh = SubResource( 21 )
+skeleton = NodePath("../..")
+
+[node name="Box4" type="MeshInstance" parent="Box"]
+layers = 2
+mesh = SubResource( 23 )
+skeleton = NodePath("../..")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="WaterOverlay" type="ColorRect" parent="HUD"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0.168627, 0.490196, 0.8, 0.305882 )
+
+[node name="Panel" type="Panel" parent="HUD"]
+modulate = Color( 1, 1, 1, 0.392157 )
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -380.0
+margin_top = -111.0
+margin_right = 380.0
+margin_bottom = -31.0
+custom_styles/panel = SubResource( 38 )
+
+[node name="Inventory" type="HBoxContainer" parent="HUD"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -372.0
+margin_top = -103.0
+margin_right = 372.0
+margin_bottom = -39.0
+custom_constants/separation = 4
+
+[node name="Icon1" type="TextureRect" parent="HUD/Inventory"]
+margin_right = 64.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon1"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon2" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 68.0
+margin_right = 132.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon2"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon3" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 136.0
+margin_right = 200.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon3"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon4" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 204.0
+margin_right = 268.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon4"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon5" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 272.0
+margin_right = 336.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon5"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon6" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 340.0
+margin_right = 404.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon6"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon7" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 408.0
+margin_right = 472.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon7"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon8" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 476.0
+margin_right = 540.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon8"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon9" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 544.0
+margin_right = 608.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon9"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon10" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 612.0
+margin_right = 676.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon10"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Icon11" type="TextureRect" parent="HUD/Inventory"]
+margin_left = 680.0
+margin_right = 744.0
+margin_bottom = 64.0
+rect_min_size = Vector2( 64, 64 )
+texture = SubResource( 36 )
+expand = true
+
+[node name="Label" type="Label" parent="HUD/Inventory/Icon11"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -6.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 37 )
+text = "0"
+align = 2
+valign = 2
+
+[node name="Outline" type="Panel" parent="HUD"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -376.0
+margin_top = -107.0
+margin_right = -304.0
+margin_bottom = -35.0
+custom_styles/panel = SubResource( 39 )

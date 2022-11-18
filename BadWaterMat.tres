@@ -1,0 +1,52 @@
+[gd_resource type="ShaderMaterial" load_steps=8 format=2]
+
+[ext_resource path="res://WaterShader.gdshader" type="Shader" id=1]
+
+[sub_resource type="OpenSimplexNoise" id=30]
+octaves = 2
+
+[sub_resource type="NoiseTexture" id=31]
+flags = 15
+seamless = true
+as_normalmap = true
+bump_strength = 4.0
+noise = SubResource( 30 )
+
+[sub_resource type="Gradient" id=35]
+offsets = PoolRealArray( 0, 0.422222, 1 )
+colors = PoolColorArray( 1, 1, 1, 1, 0.480469, 0.71994, 1, 1, 0.239227, 0.376303, 0.914063, 1 )
+
+[sub_resource type="GradientTexture2D" id=36]
+gradient = SubResource( 35 )
+fill = 1
+fill_from = Vector2( 0.5, 0.5 )
+fill_to = Vector2( 0, 0 )
+
+[sub_resource type="OpenSimplexNoise" id=28]
+octaves = 5
+persistence = 0.0
+
+[sub_resource type="NoiseTexture" id=29]
+seamless = true
+noise = SubResource( 28 )
+
+[resource]
+render_priority = -3
+shader = ExtResource( 1 )
+shader_param/albedo = Color( 0, 0.317647, 1, 0 )
+shader_param/specular = 0.0
+shader_param/metallic = 0.0
+shader_param/roughness = 1.0
+shader_param/point_size = 0.0
+shader_param/refraction = 0.01
+shader_param/refraction_texture_channel = Plane( 1, 0, 0, 0 )
+shader_param/normal_scale = 8.0
+shader_param/uv1_scale = Vector3( 1, 1, 1 )
+shader_param/uv1_offset = Vector3( 0.962133, 0, 0 )
+shader_param/uv2_scale = Vector3( 1, 1, 1 )
+shader_param/uv2_offset = Vector3( 0, 0, 0 )
+shader_param/water_normal_power = 0.05
+shader_param/water_ior = 1.33
+shader_param/texture_reflection = SubResource( 36 )
+shader_param/texture_refraction = SubResource( 29 )
+shader_param/texture_normal = SubResource( 31 )

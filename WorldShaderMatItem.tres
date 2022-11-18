@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=2]
+
+[ext_resource path="res://art/0-ufeff_tiles-TA.png" type="TextureArray" id=1]
+[ext_resource path="res://WorldShaderItem.gdshader" type="Shader" id=2]
+
+[resource]
+shader = ExtResource( 2 )
+shader_param/albedo = Color( 1, 1, 1, 1 )
+shader_param/specular = 0.0
+shader_param/metallic = 0.0
+shader_param/alpha_scissor_threshold = 0.25
+shader_param/roughness = 1.0
+shader_param/texture_albedo = ExtResource( 1 )
