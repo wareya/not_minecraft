@@ -351,6 +351,8 @@ public class VoxelChunkAlt : Spatial
     //float noise_above_ground_unscale = 128.0f;
     public void configure_noise(float y, OpenSimplexNoise noise)
     {
+        //y += 0.1f;
+        //y = Mathf.Ceil(y/2.0f)*2.0f;
         y += 16.0f;
         if(y > 0.0f)
             noise.Persistence = 1.0f - Mathf.Clamp(y/(noise_above_ground_unscale/2.0f), 0.0f, 1.0f)*0.3f;
@@ -359,6 +361,8 @@ public class VoxelChunkAlt : Spatial
     }
     public float calculate_noise(Vector3 coord, OpenSimplexNoise noise)
     {
+        //coord += Vector3.One*0.1f;
+        //coord = (coord/2.0f).Ceil()*2.0f;
         float density = noise.GetNoise3dv(coord);
         
         density += 0.05f;
@@ -590,9 +594,9 @@ public class VoxelChunkAlt : Spatial
             }
         }
     }
-    public void remesh()
+    public void remesh(int divide_res)
     {
-        remesh_world();
+        remesh_world(divide_res);
         remesh_ents();
         if(water_mesh_dirty)
             remesh_water();
@@ -629,8 +633,15 @@ public class VoxelChunkAlt : Spatial
             f(dir, basis, c1, c2, c3, c4, normal);
         }
     }
-    public void remesh_world()
+    int current_res = 1;
+    public void remesh_world(int divide_res)
     {
+        divide_res = Math.Max(1, divide_res);
+        current_res = divide_res;
+        
+        water_meshinstance.Visible = divide_res == 1;
+        ent_meshinstance.Visible = divide_res == 1;
+        
         var time0 = OS.GetTicksUsec();
 
         var verts = new ArrayList();
@@ -685,16 +696,27 @@ public class VoxelChunkAlt : Spatial
                 rightwards = new Vector3();
             }
             
-            Vector3 svh = new Vector3(size, size, size)/2.0f;
+            var vh = new Vector3(0.5f, 0.5f, 0.5f);
+            _c1 = (_c1 + vh) * divide_res - vh;
+            _c2 = (_c2 + vh) * divide_res - vh;
+            _c3 = (_c3 + vh) * divide_res - vh;
+            _c4 = (_c4 + vh) * divide_res - vh;
             
-            Vector3 coord = new Vector3();
-            for(var y = 0; y <= size; y++)
+            _uv1 *= divide_res;
+            _uv2 *= divide_res;
+            _uv3 *= divide_res;
+            _uv4 *= divide_res;
+            
+            var svh = new Vector3(size, size, size)/2.0f;
+            
+            var coord = new Vector3();
+            for(var y = 0; y < size+divide_res; y += divide_res)
             {
                 if(side == 2)
                     coord.z = y;
                 else
                     coord.y = y;
-                for(var z = 0; z <= size; z++)
+                for(var z = 0; z < size+divide_res; z += divide_res)
                 {
                     if(side == 0)
                         coord.z = z;
@@ -702,7 +724,7 @@ public class VoxelChunkAlt : Spatial
                         coord.x = z;
                     else
                         coord.y = z;
-                    for(var x = 0; x <= size; x++)
+                    for(var x = 0; x < size+divide_res; x += divide_res)
                     {
                         if(side == 1)
                             coord.z = x;
@@ -713,24 +735,24 @@ public class VoxelChunkAlt : Spatial
                         if(tile == 0)
                             continue;
                         
-                        Vector3 deeper = coord + forwards;
+                        Vector3 deeper = coord + forwards*divide_res;
                         if(!infos_transparent[get_tile(deeper)])
                             continue;
                         
                         var start = x;
                         var start_tile = tile;
                         
-                        while(tile == start_tile && x <= size)
+                        while(tile == start_tile && x < size+divide_res)
                         {
-                            x += 1;
-                            coord += x_offs;
+                            x += divide_res;
+                            coord += x_offs * divide_res;
                             tile = get_tile(coord);
-                            deeper += x_offs;
+                            deeper += x_offs * divide_res;
                             if(!infos_transparent[get_tile(deeper)])
                                 break;
                         }
-                        x -= 1;
-                        coord -= x_offs;
+                        x -= divide_res;
+                        coord -= x_offs * divide_res;
                         tile = start_tile;
                         
                         var c1 = _c1 + coord + (start - x)*rightwards;
@@ -740,7 +762,15 @@ public class VoxelChunkAlt : Spatial
                         
                         Vector2 offset;
                         if(dir == Vector3.Up)
+                        {
                             offset = infos_top[tile];
+                            if(divide_res != 1)
+                            {
+                                var tile2 = get_tile(coord + Vector3.Up*(divide_res-1));
+                                if(tile2 != 0)
+                                    offset = infos_top[tile2];
+                            }
+                        }
                         else if (dir == Vector3.Down)
                             offset = infos_bottom[tile];
                         else
@@ -805,7 +835,7 @@ public class VoxelChunkAlt : Spatial
             var asdf = ((ArrayMesh)meshinstance.Mesh);
             asdf.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);//, new Godot.Collections.Array(), 0);
             
-            #if true
+            if(current_res == 1)
             {
                 var collision_verts = new ArrayList();
                 var shape = new ConcavePolygonShape();
@@ -911,7 +941,6 @@ public class VoxelChunkAlt : Spatial
                     collider.ShapeOwnerAddShape(0, shape);
                 }
             }
-            #endif
         }
         
         meshinstance.MaterialOverride = mat;
@@ -1036,17 +1065,28 @@ public class VoxelChunkAlt : Spatial
                         assign_chunks();
                     
                     foreach(Vector3 dir in new []{
-                                Vector3.Up,
                                 Vector3.Left, Vector3.Right,
-                                Vector3.Forward, Vector3.Back
+                                Vector3.Forward, Vector3.Back,
+                                Vector3.Up,
                             })
                     {
                         var next_coord = coord + dir;
                         byte next_water;
-                        if(dir_chunks.ContainsKey(dir) && dir_chunks[dir].ContainsGlobalTileCoord(position + next_coord))
-                            next_water = dir_chunks[dir].get_water(next_coord - dir*size);
-                        else
+                        if(bounds.HasPoint(next_coord))
+                        {
                             next_water = get_water(coord + dir);
+                            if(next_water == 0)
+                                continue;
+                        }
+                        else if(dir_chunks.ContainsKey(dir) && dir_chunks[dir].ContainsGlobalTileCoord(position + next_coord))
+                        {
+                            next_water = dir_chunks[dir].get_water(next_coord - dir*size);
+                            if(next_water == 0)
+                                continue;
+                        }
+                        else // neighbor not loaded; treat as 0
+                            continue;
+                        
                         
                         if(dir.y == 0)
                         {
@@ -1057,14 +1097,15 @@ public class VoxelChunkAlt : Spatial
                             }
                             else
                             {
-                                byte under_tile;
+                                byte under_tile = 0;
                                 var next_coord_under = coord + dir + Vector3.Down;
-                                if(dir_chunks.ContainsKey(dir) && dir_chunks[dir].ContainsGlobalTileCoord(position + next_coord_under))
+                                if(bounds.HasPoint(next_coord))
+                                    under_tile = get_tile(next_coord_under);
+                                else if(dir_chunks.ContainsKey(dir) && dir_chunks[dir].ContainsGlobalTileCoord(position + next_coord_under))
                                     under_tile = dir_chunks[dir].get_tile(next_coord_under - dir*size);
                                 else if(dir_chunks.ContainsKey(dir + Vector3.Down) && dir_chunks[dir + Vector3.Down].ContainsGlobalTileCoord(position + next_coord_under))
                                     under_tile = dir_chunks[dir + Vector3.Down].get_tile(next_coord_under - (dir + Vector3.Down)*size);
-                                else
-                                    under_tile = get_tile(next_coord_under);
+                                // else unloaded, use default 0
                                 
                                 var on_ground = under_tile != 0;
                                 if(on_ground)
@@ -1124,6 +1165,7 @@ public class VoxelChunkAlt : Spatial
         
         for_dirs((dir, basis, _c1, _c2, _c3, _c4, normal) =>
         {
+            // FIXME: use strip meshing for the up/down directions
             VoxelChunkAlt next_chunk    = (VoxelChunkAlt)GDGet(chunks, position + dir*size);
             VoxelChunkAlt up_next_chunk = (VoxelChunkAlt)GDGet(chunks, position + dir*size + Vector3.Up*size);
             VoxelChunkAlt up_chunk      = (VoxelChunkAlt)GDGet(chunks, position + Vector3.Up*size);

@@ -53,20 +53,23 @@ func handle_inventory():
         var icon : TextureRect = $HUD/Inventory.get_child(i)
         if icon != first and icon.texture == first.texture:
             icon.texture = icon.texture.duplicate()
+        icon.visible = true
         if i < inventory.size() and inventory[i].type != 0:
             var label = icon.get_node("Label")
-            icon.visible = true
+            icon.modulate.a = 1.0
             var info : GameWorld.TileType = world.tile_type_info[inventory[i].type]
             var tex : AtlasTexture = icon.texture
             tex.region.position = info.coord_side * 16.0
             label.visible = inventory[i].stackable
             label.text = str(inventory[i].count)
         else:
-            icon.visible = false
+            icon.modulate.a = 0.0
         
-        icon.modulate.a = 0.5
+        if icon.modulate.a > 0:
+            icon.modulate.a = 0.5
         if inventory_cur == i:
-            icon.modulate.a = 1.0
+            if icon.modulate.a > 0:
+                icon.modulate.a = 1.0
             var rect = icon.get_global_rect()
             $HUD/Outline.set_global_position(rect.position, false)
             $HUD/Outline.rect_position -= Vector2(4, 4)
@@ -184,12 +187,16 @@ func _process(delta):
         
         if local_wishdir.y > 0:
             detach_from_floor()
+        print(water_dist)
     
     if local_wishdir == Vector3():
         actual_accel *= 0.5
     
     if in_water and local_wishdir != Vector3() and water_dist < -0.5:
         actual_gravity = 0.0
+    
+    if in_water and local_wishdir.y > 0.0 and water_dist > -0.5 and velocity.y > 0.0:
+        local_wishdir.y *= 0.5
     
     var accel_delta = delta*actual_walkspeed*actual_accel
     var newvel_h = (velocity*Vector3(1,0,1)).move_toward(local_wishdir*actual_walkspeed*Vector3(1,0,1), accel_delta)

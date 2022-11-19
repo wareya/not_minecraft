@@ -345,7 +345,7 @@ func custom_move_and_slide(delta, velocity):
             
             if stair_residual != null and stair_residual.size() > 0:
                 did_stairs = true
-                print("stair residual exists ", Engine.get_frames_drawn())
+                #print("stair residual exists ", Engine.get_frames_drawn())
                 delta_velocity = stair_residual[0]
                 translation = stair_residual[1]
                 raw_velocity = stair_residual[2]
@@ -394,9 +394,10 @@ func custom_move_and_slide(delta, velocity):
                         delta_velocity = vector_reject(delta_velocity, collision.normal)
                         raw_velocity = vector_reject(raw_velocity, collision.normal)
                     else:
-                        print(delta_velocity.y)
-                        print(raw_velocity.y)
-                        print(collision.normal)
+                        #print(delta_velocity.y)
+                        #print(raw_velocity.y)
+                        #print(collision.normal)
+                        pass
                     if use_collider_velocity:
                         var addvel = vector_project(collision.collider_velocity, collision.normal)
                         #print(addvel)
