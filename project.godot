@@ -117,5 +117,6 @@ quality/directional_shadow/size=2048
 quality/shadow_atlas/size=2048
 quality/shading/force_lambert_over_burley=true
 quality/shading/force_blinn_over_ggx=true
+quality/depth_prepass/enable=false
 quality/filters/msaa=2
 environment/default_environment="res://default_env.tres"

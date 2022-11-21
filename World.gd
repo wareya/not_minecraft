@@ -212,7 +212,7 @@ func get_intended_res(player_chunk_coord, chunk_coord):
     return ret
 
 # warning-ignore:integer_division
-var render_distance = 12.0*16/CHUNK_SIZE
+var render_distance = 8.0*16/CHUNK_SIZE
 var prev_player_chunk_coord = null
 var near_unloaded_chunks = []
 var near_unloaded_chunks_set = {}
@@ -226,8 +226,8 @@ var remesh_list = []
 
 func check_player_nearby_chunks():
 # warning-ignore:integer_division
-    chunk_low_res_distance = 12.0*16.0
-    render_distance = 12.0*16/CHUNK_SIZE
+    chunk_low_res_distance = 16.0*16.0
+    render_distance = 8.0*16/CHUNK_SIZE
     var changed = render_distance != prev_render_distance
     changed = changed or chunk_low_res_distance != prev_low_res_distance
     prev_render_distance = render_distance

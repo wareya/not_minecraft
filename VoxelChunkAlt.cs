@@ -1230,17 +1230,14 @@ public class VoxelChunkAlt : Spatial
                             var start_current = current;
                             var start_above_current = above_current;
                             
-                            //var i = 0;
                             while(current == start_current
                                   && (above_current == 0) == (start_above_current == 0)
                                   && x <= size)
                             {
-                                //i += 1;
                                 x += 1;
                                 var new_coord = new Vector3(x, y, z);
                                 current = Math.Min((byte)8, get_water(new_coord));
                                 above_current = Math.Min((byte)8, get_water(new_coord + Vector3.Up));
-                                //GD.Print("advancing search loop ", i);
                             }
                             x -= 1;
                             current = start_current;
