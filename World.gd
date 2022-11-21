@@ -226,7 +226,7 @@ var remesh_list = []
 
 func check_player_nearby_chunks():
 # warning-ignore:integer_division
-    chunk_low_res_distance = 8.0*16.0
+    chunk_low_res_distance = 12.0*16.0
     render_distance = 12.0*16/CHUNK_SIZE
     var changed = render_distance != prev_render_distance
     changed = changed or chunk_low_res_distance != prev_low_res_distance
@@ -343,7 +343,7 @@ func check_player_nearby_chunks():
         #print(near_unloaded_chunks.size())
         pass
     
-    var load_budget = 0.01 * budget_multiplier
+    var load_budget = 0.02 * budget_multiplier
     var do_time = near_unloaded_chunks.size() > 0
     var timer = Stopwatch.new()
     while near_unloaded_chunks.size() > 0:
@@ -365,7 +365,7 @@ func check_player_nearby_chunks():
                 to_unload.push_back(chunk_coord)
     
     timer.cycle()
-    var unload_time_budget = 0.005 * budget_multiplier
+    var unload_time_budget = 0.01 * budget_multiplier
     while to_unload.size() > 0:
         var chunk_coord = to_unload.pop_back()
         var chunk = chunks[chunk_coord]
@@ -375,7 +375,7 @@ func check_player_nearby_chunks():
             break
     
     timer.cycle()
-    var remesh_time_budget = 0.005 * budget_multiplier
+    var remesh_time_budget = 0.01 * budget_multiplier
     while remesh_list.size() > 0:
         var data = remesh_list.pop_back()
         var chunk = data[0]

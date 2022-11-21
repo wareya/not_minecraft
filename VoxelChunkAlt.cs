@@ -1224,20 +1224,42 @@ public class VoxelChunkAlt : Spatial
                         if(dir.y == 0 && next_current >= current && next_above_current == 0)
                             continue;
                         
+                        var strip_start = x;
+                        if(dir.y != 0)
+                        {
+                            var start_current = current;
+                            var start_above_current = above_current;
+                            
+                            //var i = 0;
+                            while(current == start_current
+                                  && (above_current == 0) == (start_above_current == 0)
+                                  && x <= size)
+                            {
+                                //i += 1;
+                                x += 1;
+                                var new_coord = new Vector3(x, y, z);
+                                current = Math.Min((byte)8, get_water(new_coord));
+                                above_current = Math.Min((byte)8, get_water(new_coord + Vector3.Up));
+                                //GD.Print("advancing search loop ", i);
+                            }
+                            x -= 1;
+                            current = start_current;
+                        }
+                        
                         var top = current/8.0f;
                         var bottom = 0.0f;
                         if(dir.y == 0)
                             bottom = next_current/8.0f;
                         
-                        if(above_current == 0)
+                        if(above_current == 0 && dir.y != -1)
                             top *= vscale;
-                        if(next_above_current == 0)
+                        if(next_above_current == 0 && dir.y == 0)
                             bottom *= vscale;
                         
                         var midpoint = (top+bottom)/2.0f;
                         
-                        var scale = new Vector3(1, top-bottom, 1);
-                        var offset = new Vector3(0, midpoint - 0.5f, 0);
+                        var scale = new Vector3(1 + x - strip_start, top-bottom, 1);
+                        var offset = new Vector3((x - strip_start)/2.0f, midpoint - 0.5f, 0);
                         
                         var c1 = _c1 * scale + offset;
                         var c2 = _c2 * scale + offset;
